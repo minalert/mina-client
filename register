@@ -1,0 +1,45 @@
+#!/bin/bash
+
+
+#    Copyright 2021 Bret Young - myinternetalert.com
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+##############################################################################
+
+  CRT='/etc/ssl/certs/ca-certificates.crt'
+  MAC=$(/usr/bin/cat /sys/class/net/eth0/address | /usr/bin/sed s/://g)
+  HOME='https://chs.myinternetalert.com/api/reg'
+
+while true
+do
+
+  UPTIME=$(cat /proc/uptime | /usr/bin/awk '{print $1}' | sed 's/\..*$//')
+
+  RESPONSE=$(/usr/bin/curl -s --cacert "$CRT" -X POST \
+             -H "x-mina: $MAC" -H "x-time: $UPTIME" "$HOME");
+
+  if [[ $RESPONSE =~ [0-9a-zA-Z] && -f /tmp/up ]]; then
+    SysLog "Removing /tmp/up"
+    rm /tmp/up
+  fi
+
+  for i in $(seq 1 60)
+  do
+    /usr/bin/systemd-notify WATCHDOG=1
+    /usr/bin/sleep 60 
+  done
+
+done

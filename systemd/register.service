@@ -1,0 +1,16 @@
+[Unit]
+Description=Register for My Internet Alert
+After=network.target
+
+[Service]
+Type=simple
+SyslogIdentifier=register
+WatchdogSec=3600
+Restart=always
+ExecStart=/opt/mina/register
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill $MAINPID
+
+
+[Install]
+WantedBy=multi-user.target
