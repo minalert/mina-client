@@ -1,9 +1,20 @@
 #!/bin/bash
 
 
-  CRT='/etc/ssl/certs/ca-certificates.crt'
-  MAC=$(/usr/bin/cat /sys/class/net/eth0/address | /usr/bin/sed s/://g)
-  HOME='https://chs.myinternetalert.com/api/reg'
+CRT='/etc/ssl/certs/ca-certificates.crt'
+MAC=$(/usr/bin/cat /sys/class/net/eth0/address | /usr/bin/sed s/://g)
+CHS='https://chs.myinternetalert.com/api/reg'
+LOG='/var/log/mina/register.log'
+
+
+SysLog() {
+  # send message to register log
+  /usr/bin/echo $(date +'%Y-%m-%d %H:%M:%S') $1 >> $LOG
+}
+
+
+SysLog "Starting register ..."
+
 
 while true
 do
@@ -11,7 +22,7 @@ do
   UPTIME=$(cat /proc/uptime | /usr/bin/awk '{print $1}' | sed 's/\..*$//')
 
   RESPONSE=$(/usr/bin/curl -s --cacert "$CRT" -X POST \
-             -H "x-mina: $MAC" -H "x-time: $UPTIME" "$HOME");
+             -H "x-mina: $MAC" -H "x-time: $UPTIME" "$CHS");
 
   if [[ $RESPONSE =~ [0-9a-zA-Z] && -f /tmp/up ]]; then
     SysLog "Removing /tmp/up"

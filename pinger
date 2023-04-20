@@ -2,11 +2,23 @@
 
 
 CHS='chs.myinternetalert.com'
+LOG='/var/log/mina/pinger.log'
+
+
+SysLog() {
+  # send message to register log
+  /usr/bin/echo $(date +'%Y-%m-%d %H:%M:%S') $1 >> $LOG
+}
+
+
+SysLog "Starting pinger ..."
+
 
 while true
 do
   /usr/bin/systemd-notify WATCHDOG=1
 
+  # utilize ip address for ping incase resolver has issues
   TEMP=$(/usr/bin/getent ahosts $CHS | head -n 1 | awk '{print $1}')
   if [[ $TEMP =~ [0-9a-fA-Fa-f.] ]]  && \
      [[ ! $TEMP = "127.0.0.1" ]] && \
@@ -21,7 +33,7 @@ do
     SysLog  "Single ping failed"
     /usr/bin/systemd-notify WATCHDOG=1
 
-    # flood ping 3 packets if the single ping attempts failed
+    # flood ping 3 packets at a time if the single ping attempts failed
     while true
     do
       RESPONSE=$(/usr/bin/ping -c 3 -f -W 2 -n -s 1 $(cat /tmp/home))
@@ -32,7 +44,8 @@ do
         sleep 0.2
       else
         /usr/bin/systemd-notify WATCHDOG=1
-        /usr/bin/touch /tmp/up
+        SysLog "Flood  ping succeeded"
+	/usr/bin/touch /tmp/up
         break
       fi
     done
@@ -42,6 +55,7 @@ do
     #  if connection was lost, then ISP DHCP may change external IP
     #  requires re-register so that mac & ip address are captured
     /usr/bin/systemctl restart register
+    SysLog "Restarted register"
   fi
 
   # Following four lines enable pinger to restart before an alert is issued
