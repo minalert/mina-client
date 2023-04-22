@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# My InterNet Alert script to associate 
+#external ip address with RPi mac address
+
 
 CRT='/etc/ssl/certs/ca-certificates.crt'
 MAC=$(/usr/bin/cat /sys/class/net/eth0/address | /usr/bin/sed s/://g)
@@ -12,13 +15,14 @@ SysLog() {
   /usr/bin/echo $(date +'%Y-%m-%d %H:%M:%S') $1 >> $LOG
 }
 
+##########################################################################
 
 SysLog "Starting register ..."
 
 
 while true
 do
-
+  # Send uptime to cloud server to differentiate internet and power outage
   UPTIME=$(cat /proc/uptime | /usr/bin/awk '{print $1}' | sed 's/\..*$//')
 
   RESPONSE=$(/usr/bin/curl -s --cacert "$CRT" -X POST \

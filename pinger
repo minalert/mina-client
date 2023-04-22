@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# My InterNet Alert script to deliver
+# heart beat to cloud server.  
+
 
 CHS='chs.myinternetalert.com'
 LOG='/var/log/mina/pinger.log'
@@ -10,12 +13,18 @@ SysLog() {
   /usr/bin/echo $(date +'%Y-%m-%d %H:%M:%S') $1 >> $LOG
 }
 
+##########################################################################
 
 SysLog "Starting pinger ..."
-
+# Restart register to assure correlation between
+# RPi mac address and external ip address
+SysLog "Restarting register ..."
+/usr/bin/systemctl restart register
 
 while true
 do
+  BEG=`date +%s`
+
   /usr/bin/systemd-notify WATCHDOG=1
 
   # utilize ip address for ping incase resolver has issues
@@ -36,15 +45,18 @@ do
     # flood ping 3 packets at a time if the single ping attempts failed
     while true
     do
-      RESPONSE=$(/usr/bin/ping -c 3 -f -W 2 -n -s 1 $(cat /tmp/home))
+      RESPONSE=$(/usr/bin/ping -c 10 -f -W 2 -n -s 1 $(cat /tmp/home))
       if [[ $RESPONSE =~ "unreachable" ]] || \
          [[ $RESPONSE =~ ", 0 received, " ]] || \
          [[ ! $RESPONSE =~ [a-z0-9] ]]; then
         /usr/bin/systemd-notify WATCHDOG=1
-        sleep 0.2
+ 	if [[ ! $(/usr/bin/tail -n 1 $LOG) =~ "Flood ping failed" ]];then 
+     	  SysLog "Flood ping is failing"
+        fi
+	sleep 0.2
       else
         /usr/bin/systemd-notify WATCHDOG=1
-        SysLog "Flood  ping succeeded"
+        SysLog "Flood ping succeeded"
 	/usr/bin/touch /tmp/up
         break
       fi
@@ -58,10 +70,17 @@ do
     SysLog "Restarted register"
   fi
 
-  # Following four lines enable pinger to restart before an alert is issued
-  /usr/bin/systemd-notify WATCHDOG=1
-  /usr/bin/sleep 5 
-  /usr/bin/systemd-notify WATCHDOG=1
-  /usr/bin/sleep 5 
+  END=`date +%s`
+  BAL=$(($END-$BEG ))
+  if [[ $(($END-$BEG))  -gt 0 ]]; then
+    SysLog "Processing time: $BAL sec"
+  fi
+
+  for IDX in $(seq 1 $((10-$END+$BEG)))
+  do
+    /usr/bin/systemd-notify WATCHDOG=1
+    /usr/bin/sleep 1 
+  done
+
 
 done

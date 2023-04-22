@@ -1,5 +1,5 @@
 [Unit]
-Description=Pinger for My Internet Alert
+Description=Pinger for My InterNet Alert
 After=network.target
 
 
@@ -12,7 +12,6 @@ WatchdogSec=6
 ExecStart=/opt/mina/pinger
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/bin/kill $MAINPID
-
 
 [Install]
 WantedBy=multi-user.target

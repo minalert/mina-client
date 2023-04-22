@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 SyslogIdentifier=register
-WatchdogSec=3600
+WatchdogSec=80
 Restart=always
 ExecStart=/opt/mina/register
 ExecReload=/bin/kill -HUP $MAINPID
